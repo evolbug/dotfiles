@@ -1,0 +1,37 @@
+#!/bin/bash
+
+for pid in $(pidof -x `basename $0`)
+do
+  if [ $pid != $$ ]
+  then
+    notify-send "Backupd" "Already running, replacing"
+    kill $pid
+  fi
+done
+
+notify-send "Backupd" "Daemon started"
+
+#backup path
+Backup="/run/media/evolbug/EGGBASKET"
+Executable="rclone sync -uvv"
+
+
+#backup servers
+Full="$Executable $Backup Full:"
+Core="$Executable $Backup/core Core:"
+
+#options
+exclude='(Google|Dropbox|rclone|routines|skipping|Waiting|pacer)'
+include='(INFO|ERROR|DEBUG|Transferred)'
+
+sleep 30s
+while true
+do
+    DBGcore="`$Core 2>&1 0>&1 | egrep -v $exclude | egrep $include`"
+    DBGfull="`$Full 2>&1 0>&1 | egrep -v $exclude | egrep $include`"
+
+    notify-send "Core Sync" "$DBGcore"
+    notify-send "Full Sync" "$DBGfull"
+
+    sleep 1h
+done

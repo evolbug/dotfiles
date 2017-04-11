@@ -1,0 +1,21 @@
+#!/bin/bash
+
+for pid in $(pidof -x `basename $0`)
+do
+  if [ $pid != $$ ]
+  then
+    notify-send "lemonbard" "Already running, replacing"
+    kill $pid
+  fi
+done
+
+notify-send "lemonbard" "Daemon started"
+cd .login-daemons/lemonbar
+
+while true; do
+   ./lemon-main &
+   PID=$!
+   inotifywait -e modify "lemon-main" "lemon-content.lua"
+   kill $PID
+   killall lemonbar
+done
