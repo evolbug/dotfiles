@@ -2,9 +2,12 @@
 
 FONT="Gohu GohuFont:size=8"
 ICON="-wuncon-siji-medium-r-normal--10-100-75-75-c-80-iso10646-1"
-GEOM="1360x16+3+0" #1366x768
+#GEOM="1360x16+3+0" # 1366x768 screen
 FORE="#ebdbb2"
-BACK="#aa000000"
+#FORE="#ffffff"
+#BACK="#bb000000"
+BACK="#50000000"
+#BACK="#00000000" # fully transparent
 TLINE=1 #thickness
 CLINE="#ebdbb2"
 

@@ -49,6 +49,7 @@ end
 
 local icons = {
    bat = ul(0xe242,0xe24c,0xe24d,0xe24e,0xe24f,0xe250,0xe251,0xe252,0xe253,0xe254),
+--   bat = ul(0xe034,0xe035,0xe036,0xe037),
    net = ul(0xe0f1,0xe0f2,0xe0f3,0xe0f0),
    app = {
       term = u(0xe1ef),
@@ -124,12 +125,17 @@ end
 
 function battery()
    local level = io.popen('cat /sys/class/power_supply/BAT0/capacity'):read()
+   local status = io.popen('cat /sys/class/power_supply/BAT0/status'):read()
 
-   local icon = icons.bat[round(tonumber(level)/#icons.bat)]
+   local icon = icons.bat[round(tonumber(level)/(100/#icons.bat)+.5)]
    icon = icon:onClick('notify-send ', '"Battery\\: '..level..'"')
 
-   if tonumber(level) <= 25 then icon = "%{F#ff3070}"..icon.." %{F#-}" end
-
+   if tonumber(level) <= 25 and not status == 'Charging' then
+      icon = "%{F#ff3070}"..icon.." %{F#-}"
+   end
+   if status == 'Charging' then
+      icon = "%{F#66cc9e}"..icon.." %{F#-}"
+   end
    return icon..' '
 end
 
@@ -160,8 +166,8 @@ end
 while true do
    print(glue(
       L, windows,
-      C, time,
-      R, network, battery
+      C,
+      R, network, battery, time
    ))
    os.execute('sleep 1s')
 end
