@@ -1,0 +1,3 @@
+#!/bin/bash
+pamixer -t
+notify-send "Mute: `pamixer --get-mute`"

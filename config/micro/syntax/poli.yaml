@@ -1,0 +1,42 @@
+filetype: poli
+
+detect: 
+    filename: ".*\\.poli"
+
+rules:
+    - preproc: "(\\b(with|from)|%q|%!|%Q|%r|%x)\\b"
+    - statement: "\\b(print|input)\\b"
+    - statement: "\\b(do|while|if|elif|else|for|in|return|continue|break)\\b"
+    - special: "\\b(std|iterables)\\b"
+    - statement: "\\b(range|list)\\b"
+    - statement: "\\b(while|switch)\\b"
+    - statement: "\\.\\b(.+?)\\b"
+    - statement: "\\b(.+?)\\=(?:.*?)\\:"
+    - special: "\\b(not|and|or)\\b"
+    - constant.bool: "\\b(false|null|true)\\b"
+    - constant.number: "\\b([0-9]+)\\b"
+    - symbol: "(\\(|\\)|\\[|\\]|\\{|\\}|\\*|/|%|\\+|-|\\^|>|<|=|!|,)"
+    - special: "(->|\\.\\.\\.|\\:)"
+    - constant: "(^)\\b(\\S+?)\\b\\:"
+    - special: "(\\!\\!)\\b(new|next|index)\\b"
+    - special: "(\\!\\!)\\b(eq|ne|lt|gt|le|ge)\\b"
+    - special: "(\\!\\!)\\b(add|sub|mul|div|mod|pow|neg)\\b"
+    - special: "(\\!\\!)\\b(and|or|not)\\b"
+    - constant.string: "\\\"(\\\\.|[^\\\\\\\"])*\\\"|'(\\\\.|[^\\\\'])*'"
+    - constant.string:
+        start: "\\s*(\\\"\\\"\\\")"
+        end: "(\\\"\\\"\\\")"
+        rules: []
+
+    - constant.string:
+        start: "\\s*(''')"
+        end: "(''')"
+        rules: []
+
+    - special: "\\\\[0-7][0-7][0-7]|\\\\x[0-9a-fA-F][0-9a-fA-F]|\\\\[abefnrs]|(\\\\c|\\\\C-|\\\\M-|\\\\M-\\\\C-)."
+    - comment: "\\~.*$"
+    - comment:
+        start: "\\s*(~~~)"
+        end: "(~~~)"
+        rules: []
+

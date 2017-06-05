@@ -1,173 +1,231 @@
 #!/bin/lua
 
--- unicode helpers
-u = utf8.char
-function ul(...)
-   c={}
-   for i,x in ipairs({...}) do
-      table.insert(c, u(x))
-   end
-   return c
-end
-
-
 -- string helpers
 function string:split(sep)
    local sep, fields = sep or " ", {}
    local pattern = string.format("([^%s]+)", sep)
    self:gsub(pattern, function(c) fields[#fields+1] = c end)
-
    return fields
 end
 
 function string:join(list)
    local str = ''
-
-   for i, item in ipairs(list) do
-      str = str .. tostring(item) .. self
-   end
-
-   return (str:sub(0, (#self>0 and -#self-1 or nil)))
+   for i, item in ipairs(list) do str = str..tostring(item)..self end
+   return str:sub(0, (#self>0 and -#self-1 or nil))
 end
-
-function string:onClick(call, ...)
-   local fn = call
-   for i, arg in ipairs({...}) do
-      fn = fn .. ' ' .. tostring(arg)
-   end
-
-   return "%{A:"..fn..":}"..self.."%{A}"
-end
-
-
 
 function round(num, numDecimalPlaces)
-  return tonumber(string.format("%." .. (numDecimalPlaces or 0) .. "f", num))
+  return tonumber(string.format("%." .. (numDecimalPlaces or '0') .. "f", num))
+end
+
+function string:trim()
+  return (self:gsub("^%s*(.-)%s*$", "%1"))
+end
+
+function table.cat(a, b)
+   local c = {unpack(a)}
+   for i=1, #b do c[#c+1] = b[i] end
+   return c
 end
 
 
 
-local icons = {
-   bat = ul(0xe242,0xe24c,0xe24d,0xe24e,0xe24f,0xe250,0xe251,0xe252,0xe253,0xe254),
---   bat = ul(0xe034,0xe035,0xe036,0xe037),
-   net = ul(0xe0f1,0xe0f2,0xe0f3,0xe0f0),
-   app = {
-      term = u(0xe1ef),
-      search = u(0xe1ee),
-      files = u(0xe1e0),
-      git = u(0xe1d3),
-      task = u(0xe223),
-      net = u(0xe1a0),
-      sys = u(0xe021),
-      pac = u(0xe14d)
-   }
+HPATH = '/home/evolbug/.hooks'
+
+local hook = {
+   battery = {
+      status = io.open (HPATH..'/bat/status'),
+      level  = io.open (HPATH..'/bat/capacity')
+   };
+
+   network = {
+      ssid     = io.open (HPATH..'/net/ssid'),
+      strength = io.open (HPATH..'/net/strength')
+   };
+
+   wm = {
+      windows = io.open (HPATH..'/wm/windows'),
+      focus   = io.open (HPATH..'/wm/focused')
+   };
+
+   time = io.open (HPATH..'/time/time')
+}
+
+function query(h)
+   h:seek "set"
+   return h:read("*all"):trim()
+end
+
+local data = {
+   battery = {
+      status   = function() return query(hook.battery.status) end,
+      level    = function() return tonumber(query(hook.battery.level)) end
+   };
+
+   network = {
+      ssid     = function() return query(hook.network.ssid) end,
+      strength = function()
+         local str = query(hook.network.strength):split("/")
+         return #str>0 and round(str[1]/str[2], 1) or .2
+      end
+   };
+
+   wm = {
+      windows  = function()
+         local wlist = {}
+         local wraw = query(hook.wm.windows):split('\n')
+
+         for _, wline in ipairs(wraw) do
+            wargs = wline:split()
+
+            if wargs[2] == '0' then
+               local wname = ""
+
+               for i=4, #wargs do
+                  wname = wname .. ' ' .. wargs[i]
+               end
+
+               wlist[#wlist+1] = {id = tonumber(wargs[1]), name = wname}
+            end
+         end
+
+         return wlist
+      end,
+
+      focus  = function() return tonumber(query(hook.wm.focus)) end
+   };
+   time = function() return query(hook.time) end;
 }
 
 
 
-function hasFocus(windowID)
-   return tonumber(io.popen("xdotool getwindowfocus"):read()) == tonumber(windowID)
+-- unicode helpers
+function u (...) -- convert stream of utf8 indices to chars
+   -- u (utf8id, ...)
+   -- u (start, "amount")
+
+   local args = {...}
+
+   if type(args[2]) == "string" then
+      local forward = tonumber(args[2])
+      args = {args[1]}
+      for i=1, forward do args[#args+1] = args[1]+i end
+   end
+
+   local c = {}
+   for i, x in ipairs(args) do
+      c[i] = utf8.char(x)
+   end
+
+   return unpack(c)
 end
+
+
+
+function string:onClick(call, ...)
+   local fn = call
+   for i, arg in ipairs{...} do fn = fn..' '..tostring(arg) end
+   return "%{A:"..fn..":}"..self.."%{A}"
+end
+
+
+local icons = {
+   bat = {u(0x00e242), u(0xe24c,"8")},
+--   bat = {u(0xe034,"3")},
+--   bat = {u(0x00e1fd, "2")},
+--   bat = {u(0x00e211, "3")},
+   net = {u(0x00e25d, "4")},
+   app = {
+      term     = u(0xe1ef),
+      search   = u(0xe1ee),
+      files    = u(0xe1e0),
+      git      = u(0xe1d3),
+      task     = u(0xe223),
+      net      = u(0xe1a0),
+      sys      = u(0xe021),
+      pac      = u(0xe14d),
+   }
+}
+
 
 function iconify(name, focused)
    if not focused then
-      local app = function(n) return (name:lower()):find(n) end
+      local app = function(n) return name:lower():find(n) end
 
-      if app "firefox" then return icons.app.net
-      elseif app "terminal" then return icons.app.term
-      elseif app "xfd" then return icons.app.sys
-      elseif app "discord" then return icons.app.pac
-      elseif app "task manager" then return icons.app.task
-      elseif app "finder" then return icons.app.search
-      elseif app "file manager" then return icons.app.files
+      if     app "firefox"       then return icons.app.net
+      elseif app "terminal"      then return icons.app.term
+      elseif app "xfd"           then return icons.app.sys
+      elseif app "discord"       then return icons.app.pac
+      elseif app "task manager"  then return icons.app.task
+      elseif app "finder"        then return icons.app.search
+      elseif app "file manager"  then return icons.app.files
       end
    end
+
    return name
 end
 
 
 
 function windows()
-   local windowlist = {}
+   local wbar = ""
 
-   for window in io.popen("wmctrl -l"):lines() do
+   for _,window in ipairs(data.wm.windows()) do
+      local wicon = iconify(window.name)
 
-      local wargs = window:split()
-
-      if wargs[2] == '0' then
-         local windowName = {}
-
-         for i=4, #(wargs) do
-            table.insert(windowName, wargs[i])
-         end
-
-         windowName = ' '..iconify(((' '):join(windowName)))..' '
-
-         if hasFocus(wargs[1]) then
-            windowName = '%{!u}'..windowName..'%{!u}'
-         end
-
-         windowName = windowName:onClick('xdotool', 'windowactivate', wargs[1])
-
-         table.insert(windowlist, windowName)
+      if data.wm.focus() == window.id then
+         wicon = '%{R} '..wicon..' %{R}'
       end
 
+      wicon = wicon:onClick ('xdotool windowactivate', window.id)
+      wbar = wbar..' '..wicon
    end
 
-   return (''):join(windowlist)
+   return wbar
 end
 
 function time()
-   local ctime = io.popen("date +%H:%M"):read()
-   ctime = ctime:onClick('notify-send', '-u critical', '"`date +\'%A %B %d\'`"','"`cal`"')
+   local ctime = data.time():onClick 'notify-send -u critical "`date +\'%A %B %d\'`" "`cal`"'
    return ' '..ctime..' '
 end
 
 function battery()
-   local level = io.popen('cat /sys/class/power_supply/BAT0/capacity'):read()
-   local status = io.popen('cat /sys/class/power_supply/BAT0/status'):read()
+   local level  = data.battery.level() or 1
+   local status = data.battery.status()
+   local icon = icons.bat[round(level/(100/#icons.bat+1)+.5)]
 
-   local icon = icons.bat[round(tonumber(level)/(100/#icons.bat)+.5)]
-   icon = icon:onClick('notify-send ', '"Battery\\: '..level..'"')
+   icon = icon:onClick ('notify-send "Battery\\: ', level, '"')
 
-   if tonumber(level) <= 25 and not status == 'Charging' then
-      icon = "%{F#ff3070}"..icon.." %{F#-}"
+   if level <= 25 and status ~= 'Charging' then
+      icon = "%{F#ff3070}"..icon
+   elseif status == 'Charging' then
+      icon = "%{F#66cc9e}"..icon
    end
-   if status == 'Charging' then
-      icon = "%{F#66cc9e}"..icon.." %{F#-}"
-   end
-   return icon..' '
+
+   return icon.." %{F-}"
 end
 
 function network()
-   local net=io.popen("iwgetid -r"):read()
-   icon = net and (icons.net[4]):onClick('xfce4-terminal -e nmtui-connect') or ''
-   return icon..' '
+   local net = data.network.ssid()
+   local strength = round((data.network.strength()) * #icons.net)
+   icon = icons.net[strength]..(net or '')
+   return icon:onClick 'xfce4-terminal -e nmtui-connect &'..' '
 end
-
-
-
-function L() return "%{l}" end
-function R() return "%{r}" end
-function C() return "%{c}" end
 
 function glue(...)
-   local contents = ''
-
-   for i, arg in ipairs({...}) do
-      contents = contents .. tostring(arg())
+   local string = ''
+   for i, arg in ipairs{...} do
+      arg = type(arg)=="function" and arg() or type(arg)=="table" and glue(unpack(arg)) or arg
+      string = string..tostring(arg)
    end
-
-   return contents
+   return string
 end
 
-
+function bar(left, center, right)
+   print (glue("%{l}", left, "%{c}", center, "%{r}", right))
+end
 
 while true do
-   print(glue(
-      L, windows,
-      C,
-      R, network, battery, time
-   ))
+   bar ({windows}, {time}, {network, battery})
    os.execute('sleep 1s')
 end

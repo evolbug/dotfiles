@@ -1,0 +1,34 @@
+#/bin/bash
+
+HPATH=/home/evolbug/.hooks
+
+dirs=(bat net wm time)
+cmds=(
+   "cat /sys/class/power_supply/BAT0/status > $HPATH/bat/status"
+   "cat /sys/class/power_supply/BAT0/capacity > $HPATH/bat/capacity"
+
+   "iwgetid -r > $HPATH/net/ssid"
+   "iwconfig wlp8s0|grep \"Link Quality\"|cut -d '=' -f2|cut -d ' ' -f1 > $HPATH/net/strength"
+
+   "wmctrl -l > $HPATH/wm/windows"
+   "xdotool getwindowfocus > $HPATH/wm/focused"
+
+   "date +%H:%M > $HPATH/time/time"
+)
+
+for dir in "${dirs[@]}"
+do
+   if [ ! -d $dir ]
+   then
+      mkdir $dir
+   fi
+done
+
+while [ true ]
+do
+   sleep 1
+   for cmd in "${cmds[@]}"
+   do
+      eval $cmd
+   done
+done

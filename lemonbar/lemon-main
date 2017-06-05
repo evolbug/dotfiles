@@ -2,13 +2,14 @@
 
 FONT="Gohu GohuFont:size=8"
 ICON="-wuncon-siji-medium-r-normal--10-100-75-75-c-80-iso10646-1"
-#GEOM="1360x16+3+0" # 1366x768 screen
+GEOM="1360x15+3+0" # 1366x768 screen
 FORE="#ebdbb2"
+#FORE="#000000"
 #FORE="#ffffff"
-#BACK="#bb000000"
-BACK="#50000000"
+BACK="#bf000000"
+#BACK="#50000000"
 #BACK="#00000000" # fully transparent
 TLINE=1 #thickness
 CLINE="#ebdbb2"
 
-./lemon-content.lua | lemonbar -p -f "$FONT" -f "$ICON" -g "$GEOM" -F $FORE -B $BACK -u $TLINE -U $CLINE | bash
+./lemon-content.lua | lemonbar -p -f "$FONT" -f "$ICON" -g "$GEOM" -F $FORE -B $BACK -u $TLINE -U $CLINE -a 100| bash

@@ -33,5 +33,5 @@ do
     notify-send "Core Sync" "$DBGcore"
     notify-send "Full Sync" "$DBGfull"
 
-    sleep 1h
+    sleep 2h
 done
