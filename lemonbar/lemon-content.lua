@@ -85,7 +85,7 @@ local data = {
                   wname = wname .. ' ' .. wargs[i]
                end
 
-               wlist[#wlist+1] = {id = tonumber(wargs[1]), name = wname}
+               wlist[tonumber(wargs[1])] = wname:trim() -- id = name
             end
          end
 
@@ -130,11 +130,14 @@ end
 
 
 local icons = {
-   bat = {u(0x00e242), u(0xe24c,"8")},
+   bat = {u(0xe242, "9")},
+--   bat = {u(0xe242), u(0xe24c,"8")},
+--   bat = {u(0xe210, "4")},
 --   bat = {u(0xe034,"3")},
---   bat = {u(0x00e1fd, "2")},
---   bat = {u(0x00e211, "3")},
-   net = {u(0x00e25d, "4")},
+--   bat = {u(0xe1fd, "2")},
+--   bat = {u(0xe211, "3")},
+--   net = {u(0xe25d, "4")},
+   net = {u(0xe21b, "3")},
    app = {
       term     = u(0xe1ef),
       search   = u(0xe1ee),
@@ -144,6 +147,11 @@ local icons = {
       net      = u(0xe1a0),
       sys      = u(0xe021),
       pac      = u(0xe14d),
+      writer   = u(0xe1ed),
+      ssheets  = u(0xe267),
+      present  = u(0xe1d1),
+      pencil   = u(0xe22a),
+      pencil2  = u(0xe1e5),
    }
 }
 
@@ -159,6 +167,9 @@ function iconify(name, focused)
       elseif app "task manager"  then return icons.app.task
       elseif app "finder"        then return icons.app.search
       elseif app "file manager"  then return icons.app.files
+      elseif app "writer"        then return icons.app.writer
+      elseif app "spreadsheets"  then return icons.app.ssheets
+      elseif app "presentation"  then return icons.app.present
       end
    end
 
@@ -170,30 +181,36 @@ end
 function windows()
    local wbar = ""
 
-   for _,window in ipairs(data.wm.windows()) do
-      local wicon = iconify(window.name)
+   for id, title in pairs(data.wm.windows()) do
+      local wicon = iconify(title)
 
-      if data.wm.focus() == window.id then
+      if data.wm.focus() == id then
          wicon = '%{R} '..wicon..' %{R}'
       end
 
-      wicon = wicon:onClick ('xdotool windowactivate', window.id)
+      wicon = wicon:onClick ('xdotool windowactivate', id)
       wbar = wbar..' '..wicon
    end
 
    return wbar
 end
 
+function window_title()
+   for id, title in pairs(data.wm.windows()) do
+      if data.wm.focus() == id then return title end
+   end
+   return ''
+end
+
 function time()
    local ctime = data.time():onClick 'notify-send -u critical "`date +\'%A %B %d\'`" "`cal`"'
-   return ' '..ctime..' '
+   return ctime
 end
 
 function battery()
    local level  = data.battery.level() or 1
    local status = data.battery.status()
    local icon = icons.bat[round(level/(100/#icons.bat+1)+.5)]
-
    icon = icon:onClick ('notify-send "Battery\\: ', level, '"')
 
    if level <= 25 and status ~= 'Charging' then
@@ -202,15 +219,20 @@ function battery()
       icon = "%{F#66cc9e}"..icon
    end
 
-   return icon.." %{F-}"
+   return icon.."%{F-}"
 end
 
 function network()
    local net = data.network.ssid()
-   local strength = round((data.network.strength()) * #icons.net)
-   icon = icons.net[strength]..(net or '')
-   return icon:onClick 'xfce4-terminal -e nmtui-connect &'..' '
+   local strength = round(data.network.strength() * #icons.net)
+   icon = (net or '')..icons.net[strength]
+   return icon:onClick 'xfce4-terminal -e nmtui-connect &'
 end
+
+function editbar()
+   return icons.app.pencil:onClick'xfce4-terminal -e "micro /home/evolbug/.login-daemons/lemonbar/lemon-content.lua"'
+end
+
 
 function glue(...)
    local string = ''
@@ -221,11 +243,21 @@ function glue(...)
    return string
 end
 
+
+
+function _() return " " end
+function R(...) return "%{R}"..glue(...).."%{R}" end -- reverse
+function U(...) return "%{!u}"..glue(...).."%{!u}" end -- underline
+function O(...) return "%{!o}"..glue(...).."%{!o}" end -- overline
+
+
 function bar(left, center, right)
    print (glue("%{l}", left, "%{c}", center, "%{r}", right))
 end
 
+
+
 while true do
-   bar ({windows}, {time}, {network, battery})
-   os.execute('sleep 1s')
+   bar ({windows}, {window_title}, {network,_,battery,_,_,time,_,_})
+   os.execute 'sleep 1'
 end
