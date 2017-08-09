@@ -9,7 +9,7 @@ do
   fi
 done
 
-notify-send "Backupd" "Daemon started"
+notify-send "Daemon started" "Backupd"
 
 #backup path
 Backup="/run/media/evolbug/EGGBASKET"

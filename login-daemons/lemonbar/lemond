@@ -9,7 +9,7 @@ do
   fi
 done
 
-notify-send "lemonbard" "Daemon started"
+notify-send "Daemon started" "Lemonbard"
 cd .login-daemons/lemonbar
 
 while true; do

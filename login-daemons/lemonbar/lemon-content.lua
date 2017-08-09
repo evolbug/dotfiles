@@ -92,7 +92,7 @@ local data = {
          return wlist
       end,
 
-      focus  = function() return tonumber(query(hook.wm.focus)) end
+      focus = function() return tonumber(query(hook.wm.focus)) end
    };
    time = function() return query(hook.time) end;
 }
@@ -130,8 +130,8 @@ end
 
 
 local icons = {
-   bat = {u(0xe242, "9")},
---   bat = {u(0xe242), u(0xe24c,"8")},
+--   bat = {u(0xe242, "9")},
+   bat = {u(0xe242), u(0xe24c,"8")},
 --   bat = {u(0xe210, "4")},
 --   bat = {u(0xe034,"3")},
 --   bat = {u(0xe1fd, "2")},
@@ -178,6 +178,24 @@ end
 
 
 
+function glue(...)
+   local string = ''
+   for i, arg in ipairs{...} do
+      arg = type(arg)=="function" and arg() or type(arg)=="table" and glue(unpack(arg)) or arg
+      string = string..tostring(arg)
+   end
+   return string
+end
+
+
+function _() return " " end
+function __() return "  " end
+function R(...) return "%{R}"..glue(...).."%{R}" end -- reverse
+function U(...) return "%{!u}"..glue(...).."%{!u}" end -- underline
+function O(...) return "%{!o}"..glue(...).."%{!o}" end -- overline
+
+
+
 function windows()
    local wbar = ""
 
@@ -185,7 +203,7 @@ function windows()
       local wicon = iconify(title)
 
       if data.wm.focus() == id then
-         wicon = '%{R} '..wicon..' %{R}'
+         wicon = U(' '..wicon..' ')
       end
 
       wicon = wicon:onClick ('xdotool windowactivate', id)
@@ -234,21 +252,6 @@ function editbar()
 end
 
 
-function glue(...)
-   local string = ''
-   for i, arg in ipairs{...} do
-      arg = type(arg)=="function" and arg() or type(arg)=="table" and glue(unpack(arg)) or arg
-      string = string..tostring(arg)
-   end
-   return string
-end
-
-
-
-function _() return " " end
-function R(...) return "%{R}"..glue(...).."%{R}" end -- reverse
-function U(...) return "%{!u}"..glue(...).."%{!u}" end -- underline
-function O(...) return "%{!o}"..glue(...).."%{!o}" end -- overline
 
 
 function bar(left, center, right)
@@ -258,6 +261,6 @@ end
 
 
 while true do
-   bar ({windows}, {window_title}, {network,_,battery,_,_,time,_,_})
+   bar (windows, window_title, {network,_,battery,__,time,__})
    os.execute 'sleep 1'
 end

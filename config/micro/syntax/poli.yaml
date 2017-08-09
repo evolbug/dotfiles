@@ -1,42 +1,60 @@
-filetype: poli
+filetype: Poli source
 
-detect: 
-    filename: ".*\\.poli"
+detect:
+   filename: ".*\\.pi"
 
 rules:
-    - preproc: "(\\b(with|from)|%q|%!|%Q|%r|%x)\\b"
-    - statement: "\\b(print|input)\\b"
-    - statement: "\\b(do|while|if|elif|else|for|in|return|continue|break)\\b"
-    - special: "\\b(std|iterables)\\b"
-    - statement: "\\b(range|list)\\b"
-    - statement: "\\b(while|switch)\\b"
-    - statement: "\\.\\b(.+?)\\b"
-    - statement: "\\b(.+?)\\=(?:.*?)\\:"
-    - special: "\\b(not|and|or)\\b"
-    - constant.bool: "\\b(false|null|true)\\b"
-    - constant.number: "\\b([0-9]+)\\b"
-    - symbol: "(\\(|\\)|\\[|\\]|\\{|\\}|\\*|/|%|\\+|-|\\^|>|<|=|!|,)"
-    - special: "(->|\\.\\.\\.|\\:)"
-    - constant: "(^)\\b(\\S+?)\\b\\:"
-    - special: "(\\!\\!)\\b(new|next|index)\\b"
-    - special: "(\\!\\!)\\b(eq|ne|lt|gt|le|ge)\\b"
-    - special: "(\\!\\!)\\b(add|sub|mul|div|mod|pow|neg)\\b"
-    - special: "(\\!\\!)\\b(and|or|not)\\b"
-    - constant.string: "\\\"(\\\\.|[^\\\\\\\"])*\\\"|'(\\\\.|[^\\\\'])*'"
-    - constant.string:
-        start: "\\s*(\\\"\\\"\\\")"
-        end: "(\\\"\\\"\\\")"
-        rules: []
+   #includes
+   - preproc: "\\b((with|from)|%q|%!|%Q|%r|%x)\\b"
 
-    - constant.string:
-        start: "\\s*(''')"
-        end: "(''')"
-        rules: []
+   #flow control
+   - statement: "\\b(while|if|then|elif|else|return|continue|break|do|for|in)\\b"
 
-    - special: "\\\\[0-7][0-7][0-7]|\\\\x[0-9a-fA-F][0-9a-fA-F]|\\\\[abefnrs]|(\\\\c|\\\\C-|\\\\M-|\\\\M-\\\\C-)."
-    - comment: "\\~.*$"
-    - comment:
-        start: "\\s*(~~~)"
-        end: "(~~~)"
-        rules: []
+   #dot (member) operator
+   - identifier: "(\\w*?\\.\\w+)"
+
+   - constant.bool: "\\b(false|null|true)\\b"
+
+   - constant.number: "\\b([0-9\\.]+)\\b"
+
+   #method calls
+   - special: "(\\w|\\.)+?\\("
+
+   #structs
+   - identifier: "\\A\\b(\\S+?)\\b\\:"
+
+   #method define
+   - identifier.function: "(\\w+!?)(\\w*)(\\s*\\{)"
+
+   - constant: "\\b(self)\\b"
+
+   #parens, braces, brackets
+   - comment: "[(){}\\[\\]]"
+
+   - symbol: "(\\*|/|%|\\+|-|\\^|>|<|=|!|,)"
+
+   - special: "(->|\\.\\.\\.|\\:|\\?)"
+
+   - symbol: "\\b(not|and|or)\\b"
+
+   - constant: "\\b(call|index)\\b(\\!)"
+
+   - constant: "\\b(eq|ne|lt|gt|le|ge)\\b(\\!)"
+
+   - constant: "\\b(add|sub|mul|div|mod|pow|neg)\\b(\\!)"
+
+   - type: "\\b(i08|i16|i32|i64|u08|u16|u32|u64|str)\\b"
+
+   - constant.string: "\\\"(\\\\.|[^\\\\\\\"])*\\\"|'(\\\\.|[^\\\\'])*'"
+
+   - special: "\\\\[0-7][0-7][0-7]|\\\\x[0-9a-fA-F][0-9a-fA-F]|\\\\[abefnrs]|(\\\\c|\\\\C-|\\\\M-|\\\\M-\\\\C-)."
+
+   - preproc: "\\b(template)\\b"
+
+   - comment: "\\#.*$"
+
+   - comment:
+      start: "\\s*(###)"
+      end: "(###)"
+      rules: []
 
